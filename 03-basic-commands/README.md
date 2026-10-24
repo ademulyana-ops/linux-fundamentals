@@ -231,6 +231,132 @@ Tekan `q` untuk keluar dari `top`.
 clear
 ```
 
+## 7. Contoh Perintah dan Output Terminal
+
+Contoh berikut menunjukkan bagaimana perintah dan hasilnya terlihat di terminal. Baris setelah prompt adalah output. Nilai seperti waktu, versi sistem, kapasitas, dan nama perangkat di bawah hanya ilustrasi; hasil di servermu akan berbeda.
+
+### Identitas pengguna dan navigasi riwayat
+
+```console
+ademulyana@ademulyana-server:~$ whoami
+ademulyana
+
+ademulyana@ademulyana-server:~$ id
+uid=1000(ademulyana) gid=1000(ademulyana) groups=1000(ademulyana),27(sudo)
+
+ademulyana@ademulyana-server:~$ pwd
+/home/ademulyana
+
+ademulyana@ademulyana-server:~$ history
+  1  whoami
+  2  id
+  3  pwd
+  4  history
+```
+
+Di shell, tekan **panah atas** untuk memanggil perintah sebelumnya dan **panah bawah** untuk bergerak kembali ke perintah yang lebih baru. Untuk menggulir tampilan terminal, gunakan roda mouse atau `Shift+Page Up` dan `Shift+Page Down` jika didukung aplikasi terminal.
+
+### Masuk dan keluar dari shell root
+
+```console
+ademulyana@ademulyana-server:~$ sudo -i
+[sudo] password for ademulyana:
+root@ademulyana-server:~# whoami
+root
+
+root@ademulyana-server:~# exit
+logout
+ademulyana@ademulyana-server:~$
+```
+
+Kata sandi tidak terlihat saat diketik. Gunakan `sudo -i` hanya saat perlu bekerja sebagai root, lalu `exit` untuk kembali ke pengguna biasa.
+
+### Informasi server dan waktu
+
+```console
+ademulyana@ademulyana-server:~$ hostnamectl
+ Static hostname: ademulyana-server
+       Icon name: computer
+         Chassis: server
+      Machine ID: 0123456789abcdef0123456789abcdef
+         Boot ID: abcdef0123456789abcdef0123456789
+Operating System: Ubuntu 24.04 LTS
+          Kernel: Linux 6.8.0-generic
+    Architecture: x86-64
+
+ademulyana@ademulyana-server:~$ date
+Sat Oct 24 09:30:00 WIB 2026
+
+ademulyana@ademulyana-server:~$ timedatectl
+               Local time: Sat 2026-10-24 09:30:00 WIB
+           Universal time: Sat 2026-10-24 02:30:00 UTC
+                 RTC time: Sat 2026-10-24 02:30:00
+                Time zone: Asia/Jakarta (WIB, +0700)
+System clock synchronized: yes
+              NTP service: active
+```
+
+Output `hostnamectl` dan `timedatectl` dapat berbeda menurut versi Ubuntu, zona waktu, dan konfigurasi server.
+
+### Pemeriksaan perangkat keras dan penyimpanan
+
+```console
+ademulyana@ademulyana-server:~$ lscpu
+Architecture:             x86_64
+CPU(s):                   2
+Model name:               Example Virtual CPU
+```
+
+```console
+ademulyana@ademulyana-server:~$ lsblk
+NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+vda    252:0    0   25G  0 disk
+├─vda1 252:1    0 24.9G  0 part /
+└─vda2 252:2    0  100M  0 part /boot/efi
+```
+
+```console
+ademulyana@ademulyana-server:~$ df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda1        25G  5.2G   19G  22% /
+tmpfs           400M     0  400M   0% /dev/shm
+```
+
+Nama disk, partisi, ukuran, dan filesystem akan mengikuti perangkat serta konfigurasi server. `lsblk` menampilkan struktur disk dan partisi, sedangkan `df -h` menunjukkan penggunaan filesystem yang terpasang.
+
+### Pemeriksaan kondisi server dan proses
+
+```console
+ademulyana@ademulyana-server:~$ uptime
+ 09:30:00 up 2 days,  3:12,  1 user,  load average: 0.05, 0.03, 0.01
+
+ademulyana@ademulyana-server:~$ free -h
+               total        used        free      shared  buff/cache   available
+Mem:           1.9Gi       620Mi       410Mi        12Mi       1.0Gi       1.1Gi
+Swap:          1.0Gi          0B       1.0Gi
+```
+
+Melihat beberapa proses yang sedang berjalan:
+
+```console
+ademulyana@ademulyana-server:~$ ps aux
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root           1  0.0  0.3  22500 12000 ?        Ss   09:00   0:02 /sbin/init
+ademulyana   820  0.0  0.1  11000  5000 pts/0    R+   09:30   0:00 ps aux
+```
+
+Untuk tampilan proses yang diperbarui secara langsung:
+
+```console
+ademulyana@ademulyana-server:~$ top
+top - 09:30:00 up 2 days,  3:12,  1 user,  load average: 0.05, 0.03, 0.01
+Tasks: 120 total,   1 running, 119 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  2.0 us,  1.0 sy, 97.0 id
+MiB Mem :  1900.0 total,  410.0 free,  490.0 used, 1000.0 buff/cache
+```
+
+Tekan `q` untuk keluar dari `top`. Nilai contoh di atas tidak menggambarkan server tertentu; perintah menampilkan keadaan sistem saat dijalankan.
+
 ## Kebiasaan Aman
 
 - Baca dokumentasi perintah dengan `--help` atau `man` jika belum memahaminya.
