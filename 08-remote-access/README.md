@@ -1,6 +1,6 @@
 # Remote Access
 
-Remote access memungkinkan pengguna mengelola komputer atau server dari perangkat lain melalui jaringan. Bab ini membahas empat metode: SSH, Telnet, RDP, dan VNC.
+Bab ini khusus membahas cara mengakses **Ubuntu Server dari Ubuntu client** melalui jaringan. Metode yang dibahas adalah SSH, Telnet, RDP, dan VNC.
 
 ## Tujuan Pembelajaran
 
@@ -16,9 +16,9 @@ Setelah mempelajari bagian ini, kamu diharapkan dapat:
 
 | Metode | Akses | Port standar | Enkripsi | Penggunaan umum |
 |---|---|---:|---|---|
-| SSH | Terminal/command line | TCP 22 | Ya | Administrasi Linux dan transfer file |
-| Telnet | Terminal/teks | TCP 23 | Tidak | Sistem lama atau lab terisolasi; bukan untuk login melalui jaringan tepercaya |
-| RDP | Desktop grafis | TCP/UDP 3389 | Bergantung konfigurasi | Desktop jarak jauh, sering dipakai dari Windows |
+| SSH | Terminal/command line | TCP 22 | Ya | Administrasi Ubuntu Server dan transfer file |
+| Telnet | Terminal/teks | TCP 23 | Tidak | Pengujian konektivitas TCP terbatas di lab; bukan untuk administrasi Ubuntu |
+| RDP | Desktop grafis | TCP/UDP 3389 | Bergantung konfigurasi | Mengakses desktop grafis Ubuntu |
 | VNC | Desktop grafis | Biasanya TCP 5900 + nomor display | Bergantung konfigurasi | Berbagi atau mengendalikan desktop grafis |
 
 Gunakan remote access hanya ke server yang kamu miliki atau berwenang kelola. Jangan membuka layanan administrasi langsung ke internet tanpa kontrol akses dan perlindungan yang sesuai.
@@ -45,7 +45,14 @@ sudo systemctl enable --now ssh
 
 ### Terhubung dari client
 
-Cari alamat IP server dengan `ip a`, lalu dari komputer client jalankan:
+Pastikan Ubuntu client memiliki program SSH client. Biasanya sudah tersedia; jika belum:
+
+```bash
+sudo apt update
+sudo apt install openssh-client
+```
+
+Cari alamat IP server dengan `ip a`, lalu dari terminal Ubuntu client jalankan:
 
 ```bash
 ssh nama-pengguna@alamat-ip-server
@@ -99,7 +106,7 @@ Contoh berikut mengubah port SSH menjadi `2222`. Lakukan dari console lokal atau
    sudo ufw status
    ```
 
-   Ganti `192.168.1.25` dengan alamat client tepercaya. Jika penyedia cloud memiliki firewall/security group, tambahkan aturan TCP 2222 di sana juga. Jangan hapus aturan port 22 dahulu.
+   Ganti `192.168.1.25` dengan alamat IP Ubuntu client tepercaya. Jika ada firewall jaringan tambahan, izinkan TCP 2222 di sana juga. Jangan hapus aturan port 22 dahulu.
 
 4. Restart layanan SSH:
 
@@ -108,7 +115,7 @@ Contoh berikut mengubah port SSH menjadi `2222`. Lakukan dari console lokal atau
    sudo systemctl status ssh
    ```
 
-5. Dari terminal client kedua, uji port baru:
+5. Dari terminal Ubuntu client kedua, uji port baru:
 
    ```bash
    ssh -p 2222 nama-pengguna@alamat-ip-server
@@ -120,7 +127,7 @@ Jika koneksi baru gagal, gunakan sesi lama atau console pemulihan untuk memeriks
 
 ### Transfer file dengan SCP
 
-Menyalin file dari client ke server:
+Jalankan `scp` dari terminal Ubuntu client untuk menyalin file ke server:
 
 ```bash
 scp ./catatan.txt nama-pengguna@alamat-ip-server:/home/nama-pengguna/
@@ -142,23 +149,57 @@ SCP menggunakan SSH untuk mengenkripsi transfer. Pastikan path tujuan dan akun p
 
 ### Menggunakan kunci SSH
 
-Kunci SSH dapat digunakan sebagai alternatif kata sandi. Buat pasangan kunci di client:
+Autentikasi kunci SSH memungkinkan login tanpa mengetik **kata sandi akun server** setiap kali terhubung. Buat pasangan kunci di komputer client:
 
 ```bash
 ssh-keygen -t ed25519
 ```
 
-Simpan private key dengan aman dan jangan membagikannya. Pasang public key ke akun server:
+Ikuti petunjuk untuk lokasi penyimpanan. Gunakan passphrase untuk melindungi private key jika perangkat client hilang atau diakses orang lain. Passphrase tersebut melindungi file kunci di client dan berbeda dari kata sandi akun server. **Jangan pernah membagikan atau mengirim private key**; hanya public key (`.pub`) yang dipasang ke server.
+
+Pasang public key ke akun server:
 
 ```bash
 ssh-copy-id nama-pengguna@alamat-ip-server
 ```
 
-Kemudian uji koneksi:
+Jika SSH server menggunakan port khusus, misalnya `2222`:
 
 ```bash
-ssh nama-pengguna@alamat-ip-server
+ssh-copy-id -p 2222 nama-pengguna@alamat-ip-server
 ```
+
+`ssh-copy-id` akan meminta autentikasi server yang masih tersedia, lalu menambahkan public key ke `~/.ssh/authorized_keys` pada akun tujuan. Setelah selesai, uji login menggunakan kunci saja:
+
+```bash
+ssh -o PreferredAuthentications=publickey -o PasswordAuthentication=no nama-pengguna@alamat-ip-server
+```
+
+Dengan port khusus:
+
+```bash
+ssh -p 2222 -o PreferredAuthentications=publickey -o PasswordAuthentication=no nama-pengguna@alamat-ip-server
+```
+
+Jika login berhasil, koneksi menggunakan kunci publik. Jika private key dilindungi passphrase, client mungkin tetap meminta passphrase tersebut; gunakan `ssh-agent` untuk mengingat passphrase selama sesi client. Jangan menonaktifkan autentikasi kata sandi server sebelum login dengan kunci berhasil diuji dan kamu memiliki akses console pemulihan.
+
+Contoh sesi terminal di Ubuntu client (output ilustratif):
+
+```console
+ademulyana@ubuntu-client:~$ ssh-keygen -t ed25519
+Enter file in which to save the key (/home/ademulyana/.ssh/id_ed25519):
+Enter passphrase (empty for no passphrase):
+Your public key has been saved in /home/ademulyana/.ssh/id_ed25519.pub
+
+ademulyana@ubuntu-client:~$ ssh-copy-id -p 2222 ademulyana@192.168.1.50
+Number of key(s) added: 1
+
+ademulyana@ubuntu-client:~$ ssh -p 2222 -o PreferredAuthentications=publickey -o PasswordAuthentication=no ademulyana@192.168.1.50
+Welcome to Ubuntu Server
+ademulyana@ademulyana-server:~$
+```
+
+Jika gagal, periksa bahwa public key terpasang pada akun server yang benar, port dan alamat server tepat, serta permission direktori `.ssh` dan file `authorized_keys` sesuai. Pastikan akses alternatif masih tersedia sebelum mengubah konfigurasi autentikasi SSH.
 
 ## 3. Telnet
 
@@ -166,7 +207,7 @@ Telnet menyediakan sesi terminal melalui jaringan, tetapi **tidak mengenkripsi**
 
 ### Menguji port layanan dengan Telnet
 
-Pada lab atau jaringan tepercaya, client Telnet kadang digunakan untuk menguji apakah port TCP dapat dijangkau. Pengujian ini tidak membuktikan bahwa layanan aman atau berfungsi sepenuhnya.
+Pada Ubuntu client di lab atau jaringan tepercaya, client Telnet kadang digunakan untuk menguji apakah port TCP dapat dijangkau. Pengujian ini tidak membuktikan bahwa layanan aman atau berfungsi sepenuhnya.
 
 Pasang client jika belum tersedia:
 
@@ -183,7 +224,7 @@ telnet alamat-ip-server 22
 
 Jika koneksi TCP berhasil, server SSH biasanya segera menampilkan banner protokol, lalu menutup sesi atau menunggu protokol SSH yang benar. Telnet bukan client SSH; jangan masukkan kata sandi melalui koneksi Telnet. Keluar dengan `Ctrl+]`, lalu ketik `quit`.
 
-Jangan memasang atau mengaktifkan server Telnet untuk administrasi server. Jika harus mengelola perangkat lama yang hanya mendukung Telnet, batasi pada jaringan lab terisolasi dan jangan gunakan kredensial yang dipakai di sistem lain.
+Jangan memasang atau mengaktifkan server Telnet untuk administrasi Ubuntu. Pada Ubuntu, gunakan SSH untuk login jarak jauh; Telnet di bab ini hanya contoh client untuk menguji konektivitas TCP di jaringan lab.
 
 ## 4. RDP (Remote Desktop Protocol)
 
@@ -211,13 +252,20 @@ sudo ufw status
 
 Jangan aktifkan firewall secara membabi buta pada server remote: pastikan aturan SSH yang diperlukan sudah ada agar koneksi administrasi tidak terputus.
 
-### Terhubung ke server RDP
+### Terhubung dari Ubuntu client ke server RDP
 
-Di Windows, buka **Remote Desktop Connection** (`mstsc`), masukkan alamat IP server, lalu masuk dengan akun Ubuntu yang diizinkan. Di Linux, aplikasi seperti Remmina dapat digunakan. Nama aplikasi client di sistem lain dapat berbeda.
+Di Ubuntu client, pasang Remmina jika belum tersedia:
+
+```bash
+sudo apt update
+sudo apt install remmina remmina-plugin-rdp
+```
+
+Buka Remmina dari menu aplikasi, pilih protokol **RDP**, masukkan alamat IP Ubuntu Server, lalu masuk dengan akun yang diizinkan. Pastikan firewall server hanya mengizinkan koneksi dari jaringan tepercaya.
 
 ## 5. VNC (Virtual Network Computing)
 
-VNC menyediakan akses ke desktop grafis menggunakan server dan viewer. Implementasi dan konfigurasi sesi desktop bergantung pada distribusi serta lingkungan desktop yang digunakan. VNC tidak selalu mengenkripsi seluruh sesi; gunakan konfigurasi keamanan yang didukung server dan utamakan tunnel SSH atau VPN.
+VNC menyediakan akses ke desktop grafis Ubuntu menggunakan server dan viewer. Konfigurasi sesi desktop bergantung pada lingkungan desktop yang dipasang. VNC tidak selalu mengenkripsi seluruh sesi; gunakan konfigurasi keamanan yang didukung server dan utamakan tunnel SSH atau VPN.
 
 ### Contoh server TigerVNC
 
@@ -225,7 +273,7 @@ Ubuntu Server memerlukan lingkungan desktop yang cocok sebelum sesi VNC dapat di
 
 ```bash
 sudo apt update
-sudo apt install tigervnc-standalone-server tigervnc-viewer
+sudo apt install tigervnc-standalone-server
 ```
 
 Pasang dan konfigurasi lingkungan desktop yang sesuai terlebih dahulu. Nama paket desktop dan konfigurasi sesi dapat berbeda menurut versi serta kebutuhan server. Setelah itu, atur kata sandi VNC untuk pengguna yang menjalankan sesi:
@@ -247,17 +295,24 @@ Hentikan sesi display tersebut:
 vncserver -kill :1
 ```
 
-Perintah dan kebutuhan konfigurasi sesi dapat berbeda menurut paket TigerVNC dan versi Ubuntu. Periksa bantuan paket yang terpasang (`vncserver --help`) dan dokumentasi distribusi. Jangan menganggap hanya menjalankan `vncserver` sudah menghasilkan desktop yang aman atau sesuai.
+Perintah dan kebutuhan konfigurasi sesi dapat berbeda menurut paket TigerVNC dan versi Ubuntu. Periksa bantuan paket yang terpasang (`vncserver --help`) dan dokumentasi Ubuntu untuk paket tersebut. Jangan menganggap hanya menjalankan `vncserver` sudah menghasilkan desktop yang aman atau sesuai.
 
-### Menghubungkan VNC melalui tunnel SSH
+Pada Ubuntu client, pasang aplikasi viewer jika belum tersedia:
 
-Jangan mengekspos port VNC langsung ke internet. Dari client, buat tunnel SSH:
+```bash
+sudo apt update
+sudo apt install tigervnc-viewer
+```
+
+### Menghubungkan dari Ubuntu client melalui tunnel SSH
+
+Jangan mengekspos port VNC langsung ke internet. Dari terminal Ubuntu client, buat tunnel SSH:
 
 ```bash
 ssh -L 5901:localhost:5901 nama-pengguna@alamat-ip-server
 ```
 
-Biarkan koneksi SSH tetap terbuka. Di aplikasi VNC Viewer pada client, sambungkan ke:
+Biarkan koneksi SSH tetap terbuka. Sambungkan viewer VNC pada Ubuntu client ke:
 
 ```text
 localhost:5901
@@ -273,10 +328,10 @@ vncviewer localhost:5901
 
 ## 6. Contoh Sesi SSH
 
-Output berikut ilustratif; alamat IP, fingerprint, dan banner dapat berbeda:
+Output berikut ilustratif; alamat IP, fingerprint, dan banner dapat berbeda. Perintah dijalankan di terminal Ubuntu client:
 
 ```console
-ademulyana@client:~$ ssh ademulyana@192.168.1.50
+ademulyana@ubuntu-client:~$ ssh ademulyana@192.168.1.50
 The authenticity of host '192.168.1.50' can't be established.
 ED25519 key fingerprint is SHA256:contoh-fingerprint.
 Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
