@@ -87,6 +87,8 @@ Contoh lainnya:
 
 Periksa format jadwal dengan teliti. Jadwal dan semantik hari dalam minggu sebaiknya diuji pada versi cron yang digunakan, khususnya jika memakai kombinasi kolom tanggal dan hari.
 
+Untuk membantu membaca atau menyusun ekspresi jadwal, gunakan [Crontab Guru](https://crontab.guru/). Alat ini membantu menjelaskan ekspresi cron, tetapi tetap cocokkan hasilnya dengan kebutuhan dan perilaku cron pada server sebelum menyimpannya.
+
 ## 3. Menambahkan Cron Job Pengguna
 
 ### Menyiapkan skrip
